@@ -1,0 +1,452 @@
+{
+ "cells": [
+  {
+   "cell_type": "code",
+   "execution_count": 87,
+   "id": "2bd768a7-d3ab-4451-8e41-0eede85237ce",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "import pandas as pd\n",
+    "import numpy as np\n",
+    "import re\n",
+    "from pathlib import Path\n",
+    "import glob\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 88,
+   "id": "229dd0f6-1e9b-427f-b9da-154e6466ece9",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Helper function to read Excel files consistently\n",
+    "def read_excel_files(file_path):\n",
+    "    \"\"\"Standardized approach to read Excel files\"\"\"\n",
+    "    try:\n",
+    "        df = pd.read_excel(file_path, sheet_name=0)  # Read first sheet only\n",
+    "        # Add metadata columns\n",
+    "        df['source_file'] = Path(file_path).name\n",
+    "        df['import_timestamp'] = pd.Timestamp.now()\n",
+    "        return df\n",
+    "    except Exception as e:\n",
+    "        print(f\"Error reading {file_path}: {str(e)}\")\n",
+    "        return None\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 89,
+   "id": "f9c6a2b1-441d-47f0-9c5e-9f89c310c4ad",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Task 1a: EDA and Cleaning\n",
+    "def clean_and_analyze(df, df_name):\n",
+    "    \"\"\"Perform EDA and cleaning on a dataframe\"\"\"\n",
+    "    if df is None:  # Check if the dataframe is None (not loaded properly)\n",
+    "        print(f\"{df_name} DataFrame is not valid. Skipping analysis.\")\n",
+    "        return df\n",
+    "    \n",
+    "    print(f\"\\n=== Initial Analysis for {df_name} ===\")\n",
+    "    \n",
+    "    # Initial inspection\n",
+    "    print(f\"Original shape: {df.shape}\")\n",
+    "    print(\"\\nColumns:\", df.columns.tolist())\n",
+    "    print(\"\\nData types:\\n\", df.dtypes)\n",
+    "    \n",
+    "    # Standardize column names\n",
+    "    df.columns = df.columns.str.lower().str.replace(' ', '_').str.replace(r'[^\\w_]', '', regex=True)\n",
+    "    print(\"\\nStandardized columns:\", df.columns.tolist())\n",
+    "    \n",
+    "    # Handle missing values\n",
+    "    initial_rows = len(df)\n",
+    "    df.dropna(how='all', inplace=True)  # Drop completely empty rows\n",
+    "    rows_dropped = initial_rows - len(df)\n",
+    "    print(f\"\\nRows dropped (all NA): {rows_dropped}\")\n",
+    "    \n",
+    "    # Check for duplicates\n",
+    "    dupes = df.duplicated().sum()\n",
+    "    print(f\"Duplicate rows found: {dupes}\")\n",
+    "    if dupes > 0:\n",
+    "        df.drop_duplicates(inplace=True)\n",
+    "        print(f\"Dropped {dupes} duplicates\")\n",
+    "    \n",
+    "    # Clean date columns if they exist\n",
+    "    date_cols = [col for col in df.columns if 'date' in col]\n",
+    "    for col in date_cols:\n",
+    "        try:\n",
+    "            df[col] = pd.to_datetime(df[col], errors='coerce')\n",
+    "            print(f\"Converted {col} to datetime\")\n",
+    "        except:\n",
+    "            print(f\"Could not convert {col} to datetime\")\n",
+    "    \n",
+    "    return df\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 90,
+   "id": "31064e16-398d-4c09-9460-54566c3afd13",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Directory containing all the Excel files\n",
+    "excel_files_directory = r'C:\\\\Users\\\\FINRISE\\\\Desktop\\\\Task data scie\\\\case_study_FTE\\\\case_study_FTE\\\\case_study_1\\\\data\\\\section_one_data\\\\ExcelFiles'\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 91,
+   "id": "fc5adb1c-c80a-4ad8-9910-aa14d0e84f24",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "file_path_pattern = f\"{excel_files_directory}\\\\*.xlsx\"\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 92,
+   "id": "6cd3da87-5122-4cd3-8f39-50985b1b7bd6",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Get a list of all Excel files in the directory\n",
+    "all_files = glob.glob(file_path_pattern)\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 93,
+   "id": "64004915-ea87-4370-810a-2ab328bb2706",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Directory where cleaned files will be saved\n",
+    "cleaned_files_directory = r'C:\\Users\\FINRISE\\Desktop\\Task data scie\\case_study_FTE\\case_study_FTE\\case_study_1\\data\\section_one_data\\ExcelFiles\\After_cleaning'\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 94,
+   "id": "078a90df-269a-4a30-8b23-24bb34d285d2",
+   "metadata": {},
+   "outputs": [],
+   "source": [
+    "# Ensure directory exists\n",
+    "Path(cleaned_files_directory).mkdir(parents=True, exist_ok=True)\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 95,
+   "id": "dcf7a1ba-c9f2-4731-a53a-3a9c5b63384f",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Processing file: C:\\\\Users\\\\FINRISE\\\\Desktop\\\\Task data scie\\\\case_study_FTE\\\\case_study_FTE\\\\case_study_1\\\\data\\\\section_one_data\\\\ExcelFiles\\Cyber Liability Standard Loss Run_DF453172.xlsx\n",
+      "\n",
+      "=== Initial Analysis for Cyber Liability Standard Loss Run_DF453172 ===\n",
+      "Original shape: (6, 13)\n",
+      "\n",
+      "Columns: ['Cyber Liability Standard Loss Run', 'Unnamed: 1', 'Unnamed: 2', 'Unnamed: 3', 'Unnamed: 4', 'Unnamed: 5', 'Unnamed: 6', 'Unnamed: 7', 'Unnamed: 8', 'Unnamed: 9', 'Unnamed: 10', 'source_file', 'import_timestamp']\n",
+      "\n",
+      "Data types:\n",
+      " Cyber Liability Standard Loss Run            object\n",
+      "Unnamed: 1                                   object\n",
+      "Unnamed: 2                                   object\n",
+      "Unnamed: 3                                   object\n",
+      "Unnamed: 4                                   object\n",
+      "Unnamed: 5                                   object\n",
+      "Unnamed: 6                                   object\n",
+      "Unnamed: 7                                   object\n",
+      "Unnamed: 8                                   object\n",
+      "Unnamed: 9                                   object\n",
+      "Unnamed: 10                                  object\n",
+      "source_file                                  object\n",
+      "import_timestamp                     datetime64[us]\n",
+      "dtype: object\n",
+      "\n",
+      "Standardized columns: ['cyber_liability_standard_loss_run', 'unnamed_1', 'unnamed_2', 'unnamed_3', 'unnamed_4', 'unnamed_5', 'unnamed_6', 'unnamed_7', 'unnamed_8', 'unnamed_9', 'unnamed_10', 'source_file', 'import_timestamp']\n",
+      "\n",
+      "Rows dropped (all NA): 0\n",
+      "Duplicate rows found: 0\n",
+      "Processing file: C:\\\\Users\\\\FINRISE\\\\Desktop\\\\Task data scie\\\\case_study_FTE\\\\case_study_FTE\\\\case_study_1\\\\data\\\\section_one_data\\\\ExcelFiles\\LedgerDetails.xlsx\n",
+      "\n",
+      "=== Initial Analysis for LedgerDetails ===\n",
+      "Original shape: (20, 12)\n",
+      "\n",
+      "Columns: ['ledger_item_number', 'ledger_item_created_date', 'transaction_id', 'related_invoice_number', 'related_sale_number', 'booking', 'Unnamed: 6', 'additional_reference', 'category', 'vat_code', 'source_file', 'import_timestamp']\n",
+      "\n",
+      "Data types:\n",
+      " ledger_item_number                  object\n",
+      "ledger_item_created_date            object\n",
+      "transaction_id                      object\n",
+      "related_invoice_number              object\n",
+      "related_sale_number                 object\n",
+      "booking                             object\n",
+      "Unnamed: 6                          object\n",
+      "additional_reference                object\n",
+      "category                            object\n",
+      "vat_code                            object\n",
+      "source_file                         object\n",
+      "import_timestamp            datetime64[us]\n",
+      "dtype: object\n",
+      "\n",
+      "Standardized columns: ['ledger_item_number', 'ledger_item_created_date', 'transaction_id', 'related_invoice_number', 'related_sale_number', 'booking', 'unnamed_6', 'additional_reference', 'category', 'vat_code', 'source_file', 'import_timestamp']\n",
+      "\n",
+      "Rows dropped (all NA): 0\n",
+      "Duplicate rows found: 0\n",
+      "Converted ledger_item_created_date to datetime\n",
+      "Processing file: C:\\\\Users\\\\FINRISE\\\\Desktop\\\\Task data scie\\\\case_study_FTE\\\\case_study_FTE\\\\case_study_1\\\\data\\\\section_one_data\\\\ExcelFiles\\LedgerDetails_2.xlsx\n",
+      "\n",
+      "=== Initial Analysis for LedgerDetails_2 ===\n",
+      "Original shape: (32, 14)\n",
+      "\n",
+      "Columns: ['Unnamed: 0', 'Unnamed: 1', 'Unnamed: 2', 'Unnamed: 3', 'Unnamed: 4', 'Unnamed: 5', 'Unnamed: 6', 'Unnamed: 7', 'Unnamed: 8', 'Unnamed: 9', 'Unnamed: 10', 'Unnamed: 11', 'source_file', 'import_timestamp']\n",
+      "\n",
+      "Data types:\n",
+      " Unnamed: 0                 float64\n",
+      "Unnamed: 1                 float64\n",
+      "Unnamed: 2                  object\n",
+      "Unnamed: 3                  object\n",
+      "Unnamed: 4                  object\n",
+      "Unnamed: 5                  object\n",
+      "Unnamed: 6                  object\n",
+      "Unnamed: 7                  object\n",
+      "Unnamed: 8                  object\n",
+      "Unnamed: 9                  object\n",
+      "Unnamed: 10                 object\n",
+      "Unnamed: 11                 object\n",
+      "source_file                 object\n",
+      "import_timestamp    datetime64[us]\n",
+      "dtype: object\n",
+      "\n",
+      "Standardized columns: ['unnamed_0', 'unnamed_1', 'unnamed_2', 'unnamed_3', 'unnamed_4', 'unnamed_5', 'unnamed_6', 'unnamed_7', 'unnamed_8', 'unnamed_9', 'unnamed_10', 'unnamed_11', 'source_file', 'import_timestamp']\n",
+      "\n",
+      "Rows dropped (all NA): 0\n",
+      "Duplicate rows found: 2\n",
+      "Dropped 2 duplicates\n",
+      "Processing file: C:\\\\Users\\\\FINRISE\\\\Desktop\\\\Task data scie\\\\case_study_FTE\\\\case_study_FTE\\\\case_study_1\\\\data\\\\section_one_data\\\\ExcelFiles\\MatterDetails_CompanyX.xlsx\n",
+      "\n",
+      "=== Initial Analysis for MatterDetails_CompanyX ===\n",
+      "Original shape: (6, 14)\n",
+      "\n",
+      "Columns: ['As of 10/12/2024', 'Unnamed: 1', 'Unnamed: 2', 'Unnamed: 3', 'Unnamed: 4', 'Unnamed: 5', 'Unnamed: 6', 'Unnamed: 7', 'Unnamed: 8', 'Unnamed: 9', 'Unnamed: 10', 'Unnamed: 11', 'source_file', 'import_timestamp']\n",
+      "\n",
+      "Data types:\n",
+      " As of 10/12/2024            object\n",
+      "Unnamed: 1                  object\n",
+      "Unnamed: 2                  object\n",
+      "Unnamed: 3                  object\n",
+      "Unnamed: 4                  object\n",
+      "Unnamed: 5                  object\n",
+      "Unnamed: 6                  object\n",
+      "Unnamed: 7                  object\n",
+      "Unnamed: 8                  object\n",
+      "Unnamed: 9                  object\n",
+      "Unnamed: 10                 object\n",
+      "Unnamed: 11                 object\n",
+      "source_file                 object\n",
+      "import_timestamp    datetime64[us]\n",
+      "dtype: object\n",
+      "\n",
+      "Standardized columns: ['as_of_10122024', 'unnamed_1', 'unnamed_2', 'unnamed_3', 'unnamed_4', 'unnamed_5', 'unnamed_6', 'unnamed_7', 'unnamed_8', 'unnamed_9', 'unnamed_10', 'unnamed_11', 'source_file', 'import_timestamp']\n",
+      "\n",
+      "Rows dropped (all NA): 0\n",
+      "Duplicate rows found: 0\n",
+      "Processing file: C:\\\\Users\\\\FINRISE\\\\Desktop\\\\Task data scie\\\\case_study_FTE\\\\case_study_FTE\\\\case_study_1\\\\data\\\\section_one_data\\\\ExcelFiles\\PolicyDetails.xlsx\n",
+      "\n",
+      "=== Initial Analysis for PolicyDetails ===\n",
+      "Original shape: (8, 6)\n",
+      "\n",
+      "Columns: ['Unnamed: 0', 'Unnamed: 1', 'Unnamed: 2', 'Unnamed: 3', 'source_file', 'import_timestamp']\n",
+      "\n",
+      "Data types:\n",
+      " Unnamed: 0                 float64\n",
+      "Unnamed: 1                  object\n",
+      "Unnamed: 2                  object\n",
+      "Unnamed: 3                  object\n",
+      "source_file                 object\n",
+      "import_timestamp    datetime64[us]\n",
+      "dtype: object\n",
+      "\n",
+      "Standardized columns: ['unnamed_0', 'unnamed_1', 'unnamed_2', 'unnamed_3', 'source_file', 'import_timestamp']\n",
+      "\n",
+      "Rows dropped (all NA): 0\n",
+      "Duplicate rows found: 0\n"
+     ]
+    },
+    {
+     "name": "stderr",
+     "output_type": "stream",
+     "text": [
+      "C:\\Users\\FINRISE\\AppData\\Local\\Temp\\ipykernel_10396\\1044311864.py:36: UserWarning: Could not infer format, so each element will be parsed individually, falling back to `dateutil`. To ensure parsing is consistent and as-expected, please specify a format.\n",
+      "  df[col] = pd.to_datetime(df[col], errors='coerce')\n"
+     ]
+    }
+   ],
+   "source": [
+    "# Process files and clean\n",
+    "cleaned_dfs = {}\n",
+    "for file in all_files:\n",
+    "    df_name = Path(file).stem  # Get the base name without extension\n",
+    "    print(f\"Processing file: {file}\")  # Debugging print to track which file is being processed\n",
+    "    df = read_excel_files(file)\n",
+    "    if df is not None:  # Ensure df is not None before cleaning\n",
+    "        cleaned_df = clean_and_analyze(df, df_name)\n",
+    "        cleaned_dfs[df_name] = cleaned_df\n",
+    "    else:\n",
+    "        print(f\"Skipping file {file} due to read failure.\")  # Debugging print for failed file read\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": 96,
+   "id": "99cf361c-9a75-40cd-9438-19512664aa71",
+   "metadata": {},
+   "outputs": [
+    {
+     "name": "stdout",
+     "output_type": "stream",
+     "text": [
+      "Saved cleaned data for Cyber Liability Standard Loss Run_DF453172 to C:\\Users\\FINRISE\\Desktop\\Task data scie\\case_study_FTE\\case_study_FTE\\case_study_1\\data\\section_one_data\\ExcelFiles\\After_cleaning\\Cleaned_Cyber Liability Standard Loss Run_DF453172.xlsx\n",
+      "Saved cleaned data for LedgerDetails to C:\\Users\\FINRISE\\Desktop\\Task data scie\\case_study_FTE\\case_study_FTE\\case_study_1\\data\\section_one_data\\ExcelFiles\\After_cleaning\\Cleaned_LedgerDetails.xlsx\n",
+      "Saved cleaned data for LedgerDetails_2 to C:\\Users\\FINRISE\\Desktop\\Task data scie\\case_study_FTE\\case_study_FTE\\case_study_1\\data\\section_one_data\\ExcelFiles\\After_cleaning\\Cleaned_LedgerDetails_2.xlsx\n",
+      "Saved cleaned data for MatterDetails_CompanyX to C:\\Users\\FINRISE\\Desktop\\Task data scie\\case_study_FTE\\case_study_FTE\\case_study_1\\data\\section_one_data\\ExcelFiles\\After_cleaning\\Cleaned_MatterDetails_CompanyX.xlsx\n",
+      "Saved cleaned data for PolicyDetails to C:\\Users\\FINRISE\\Desktop\\Task data scie\\case_study_FTE\\case_study_FTE\\case_study_1\\data\\section_one_data\\ExcelFiles\\After_cleaning\\Cleaned_PolicyDetails.xlsx\n",
+      "\n",
+      "Task completed successfully. Cleaned files have been saved.\n"
+     ]
+    }
+   ],
+   "source": [
+    "# Save cleaned dataframes to the specified directory\n",
+    "for df_name, cleaned_df in cleaned_dfs.items():\n",
+    "    if cleaned_df is not None and not cleaned_df.empty:  # Ensure dataframe is not empty\n",
+    "        # Saving to the specified directory\n",
+    "        output_file_path = Path(cleaned_files_directory) / f'Cleaned_{df_name}.xlsx'\n",
+    "        cleaned_df.to_excel(output_file_path, index=False)\n",
+    "        print(f\"Saved cleaned data for {df_name} to {output_file_path}\")\n",
+    "    else:\n",
+    "        print(f\"Skipping saving {df_name} as it is empty.\")  # Debugging print for empty dataframes\n",
+    "\n",
+    "print(\"\\nTask completed successfully. Cleaned files have been saved.\")\n"
+   ]
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "30e86cbc-39a1-4bdd-8ae0-96003521a3c7",
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "c141996a-d51c-437d-a107-e99d7d2b2e37",
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "cc9e2865-f62b-4d21-8c8f-15d5a3bfa210",
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "88b7f018-b5bc-49a5-b2e1-1f73f168d2ca",
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "96e1fb40-d85e-4c9a-b1dc-1173c2799a62",
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "393c8bf2-4e1d-4186-8488-41e7c2402d62",
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "b64da59a-7aca-47c4-a101-b69ff07aa1c6",
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "e3133794-6d6e-4eab-a261-9aeadb097a66",
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "99b036b7-2c14-4e25-8661-2ad15767b6e1",
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "22886a03-e5ff-4b26-af30-0d8d811fb3ac",
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  },
+  {
+   "cell_type": "code",
+   "execution_count": null,
+   "id": "6accd624-bb39-44ae-a41c-7d4f8162d79b",
+   "metadata": {},
+   "outputs": [],
+   "source": []
+  }
+ ],
+ "metadata": {
+  "kernelspec": {
+   "display_name": "Python 3 (ipykernel)",
+   "language": "python",
+   "name": "python3"
+  },
+  "language_info": {
+   "codemirror_mode": {
+    "name": "ipython",
+    "version": 3
+   },
+   "file_extension": ".py",
+   "mimetype": "text/x-python",
+   "name": "python",
+   "nbconvert_exporter": "python",
+   "pygments_lexer": "ipython3",
+   "version": "3.13.2"
+  }
+ },
+ "nbformat": 4,
+ "nbformat_minor": 5
+}

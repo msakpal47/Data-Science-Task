@@ -1,0 +1,21 @@
+,alert_id,device_id,detected_time,threat_level,threat_type
+0,2001,110,2023-12-01 09:04:00,low,phishing
+1,2002,107,2023-12-01 10:21:00,high,malware
+2,2003,106,2023-12-01 08:02:00,medium,phishing
+3,2004,104,2023-12-01 10:54:00,high,malware
+4,2005,103,2023-12-01 08:29:00,high,malware
+5,2006,109,2023-12-01 10:54:00,high,ransomware
+6,2007,108,2023-12-01 10:17:00,low,malware
+7,2008,102,2023-12-01 09:08:00,low,phishing
+8,2009,101,2023-12-01 10:44:00,medium,phishing
+9,2010,102,2023-12-01 09:27:00,low,ransomware
+10,2011,103,2023-12-01 08:28:00,high,phishing
+11,2012,103,2023-12-01 09:15:00,high,unauthorized_access
+12,2013,107,2023-12-01 09:51:00,low,ransomware
+13,2014,110,2023-12-01 08:40:00,high,phishing
+14,2015,102,2023-12-01 09:56:00,medium,phishing
+15,2016,107,2023-12-01 08:00:00,medium,unauthorized_access
+16,2017,107,2023-12-01 09:07:00,low,ransomware
+17,2018,110,2023-12-01 10:08:00,low,unauthorized_access
+18,2019,108,2023-12-01 08:45:00,medium,ransomware
+19,2020,109,2023-12-01 10:09:00,medium,ransomware

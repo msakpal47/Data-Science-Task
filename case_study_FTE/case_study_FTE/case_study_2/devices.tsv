@@ -1,0 +1,11 @@
+,device_id,user_id,device_type,os
+0,101,4,Desktop,macOS
+1,102,9,Desktop,iOS
+2,103,7,Laptop,macOS
+3,104,4,Laptop,Windows 10
+4,105,8,Desktop,Android
+5,106,10,Laptop,iOS
+6,107,5,Laptop,Windows 10
+7,108,1,Desktop,Android
+8,109,3,Laptop,Windows 10
+9,110,7,Desktop,iOS
